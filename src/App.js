@@ -27,9 +27,6 @@ function Box() {
     const texture1 = useTexture('./texture1.jpeg')
     const texture2 = useTexture('./texture2.jpeg')
 
-    texture1.encoding = THREE.sRGBEncoding
-    texture2.encoding = THREE.sRGBEncoding
-
     const dispFactorGrowing = useRef(true)
 
     const material = useMemo(() => {
@@ -39,40 +36,7 @@ function Box() {
         material.metalness = 1
         material.roughness = 0
 
-        material.userData.texture1 = {value: texture1}
-        material.userData.texture2 = {value: texture2}
-        material.userData.dispFactor = {value: 0}
-
-        material.onBeforeCompile = (shader) => {
-
-            shader.uniforms.dispFactor = material.userData.dispFactor
-            shader.uniforms.texture1 = material.userData.texture1
-            shader.uniforms.texture2 = material.userData.texture2
-
-            shader.vertexShader = 'varying vec2 vUv;\n' + shader.vertexShader
-
-            const s = 'void main() {\n'
-            const mainStartIndex = shader.vertexShader.indexOf(s) + s.length
-
-            shader.vertexShader = shader.vertexShader.slice(0, mainStartIndex) + 'vUv = uv;\n' + shader.vertexShader.slice(mainStartIndex);
-
-            shader.fragmentShader = 'uniform float dispFactor;\n' + shader.fragmentShader
-            shader.fragmentShader = 'varying vec2 vUv;\n' + shader.fragmentShader
-            shader.fragmentShader = 'uniform sampler2D texture1;\n' + shader.fragmentShader
-            shader.fragmentShader = 'uniform sampler2D texture2;\n' + shader.fragmentShader
-
-            shader.fragmentShader = shader.fragmentShader.replace(
-                '#include <map_fragment>',
-                `
-                
-                if (vUv.y > dispFactor) {
-                    diffuseColor *= texture2D(texture1, vUv);
-                } else {
-                    diffuseColor *= texture2D(texture2, vUv);
-                }
-                           
-       `)
-        }
+        applyChangingTexture(material, texture1, texture2)
 
         return material
     }, [])
@@ -102,8 +66,47 @@ function Box() {
     )
 }
 
-function applyChangingTexture(material) {
+function applyChangingTexture(material, texture1, texture2) {
 
+    texture1.encoding = THREE.sRGBEncoding
+    texture2.encoding = THREE.sRGBEncoding
+
+    material.userData.texture1 = {value: texture1}
+    material.userData.texture2 = {value: texture2}
+    material.userData.dispFactor = {value: 0}
+
+    material.onBeforeCompile = (shader) => {
+
+        shader.uniforms.dispFactor = material.userData.dispFactor
+        shader.uniforms.texture1 = material.userData.texture1
+        shader.uniforms.texture2 = material.userData.texture2
+
+        shader.vertexShader = 'varying vec2 vUv;\n' + shader.vertexShader
+
+        const s = 'void main() {\n'
+        const mainStartIndex = shader.vertexShader.indexOf(s) + s.length
+
+        shader.vertexShader = shader.vertexShader.slice(0, mainStartIndex) + 'vUv = uv;\n' + shader.vertexShader.slice(mainStartIndex);
+
+        shader.fragmentShader = 'uniform float dispFactor;\n' + shader.fragmentShader
+        shader.fragmentShader = 'varying vec2 vUv;\n' + shader.fragmentShader
+        shader.fragmentShader = 'uniform sampler2D texture1;\n' + shader.fragmentShader
+        shader.fragmentShader = 'uniform sampler2D texture2;\n' + shader.fragmentShader
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <map_fragment>',
+            `
+                
+                if (vUv.y > dispFactor) {
+                    diffuseColor *= texture2D(texture1, vUv);
+                } else {
+                    diffuseColor *= texture2D(texture2, vUv);
+                }
+                           
+       `)
+    }
+
+    return material
 }
 
 export default App;
