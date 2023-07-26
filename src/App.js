@@ -27,27 +27,45 @@ function Box() {
     const texture1 = useTexture('./texture1.jpeg')
     const texture2 = useTexture('./texture2.jpeg')
 
+    texture1.encoding = THREE.sRGBEncoding
+    texture2.encoding = THREE.sRGBEncoding
+
     const dispFactorGrowing = useRef(true)
 
     const material = useMemo(() => {
 
         const material = new THREE.MeshStandardMaterial()
 
-        material.map = texture1;
+        material.userData.texture1 = {value: texture1}
+        material.userData.texture2 = {value: texture2}
         material.userData.dispFactor = {value: 0}
 
         material.onBeforeCompile = (shader) => {
 
             shader.uniforms.dispFactor = material.userData.dispFactor
+            shader.uniforms.texture1 = material.userData.texture1
+            shader.uniforms.texture2 = material.userData.texture2
+
+            shader.vertexShader = 'varying vec2 vUv;\n' + shader.vertexShader
+
+            const s = 'void main() {\n'
+            const mainStartIndex = shader.vertexShader.indexOf(s) + s.length
+
+            shader.vertexShader = shader.vertexShader.slice(0, mainStartIndex) + 'vUv = uv;\n' + shader.vertexShader.slice(mainStartIndex);
+
 
             shader.fragmentShader = 'uniform float dispFactor;\n' + shader.fragmentShader
+            shader.fragmentShader = 'varying vec2 vUv;\n' + shader.fragmentShader
+            shader.fragmentShader = 'uniform sampler2D texture1;\n' + shader.fragmentShader
+            shader.fragmentShader = 'uniform sampler2D texture2;\n' + shader.fragmentShader
 
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <map_fragment>',
                 `
-            diffuseColor *= texture2D(map, vMapUv) * dispFactor;
+            diffuseColor *= texture2D(texture1, vUv) * dispFactor;
        `)
 
+            console.log(shader.vertexShader)
         }
 
         return material
@@ -69,11 +87,14 @@ function Box() {
             material.userData.dispFactor.value -= 0.01
         }
 
+
+        // material.userData.dispFactor.value = 0.5
     })
 
     return (
         <mesh material={material}>
-            <torusKnotGeometry args={[2, .4, 100, 16]}/>
+            {/*<torusKnotGeometry args={[2, .4, 100, 16]}/>*/}
+            <boxGeometry args={[1, 1, 1]}/>
         </mesh>
     )
 }
