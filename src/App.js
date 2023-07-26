@@ -36,6 +36,9 @@ function Box() {
 
         const material = new THREE.MeshStandardMaterial()
 
+        material.metalness = 1
+        material.roughness = 0
+
         material.userData.texture1 = {value: texture1}
         material.userData.texture2 = {value: texture2}
         material.userData.dispFactor = {value: 0}
@@ -53,7 +56,6 @@ function Box() {
 
             shader.vertexShader = shader.vertexShader.slice(0, mainStartIndex) + 'vUv = uv;\n' + shader.vertexShader.slice(mainStartIndex);
 
-
             shader.fragmentShader = 'uniform float dispFactor;\n' + shader.fragmentShader
             shader.fragmentShader = 'varying vec2 vUv;\n' + shader.fragmentShader
             shader.fragmentShader = 'uniform sampler2D texture1;\n' + shader.fragmentShader
@@ -62,7 +64,7 @@ function Box() {
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <map_fragment>',
                 `
-            diffuseColor *= texture2D(texture1, vUv) * dispFactor;
+            diffuseColor *= mix(texture2D(texture1, vUv), texture2D(texture2, vUv), dispFactor);
        `)
 
             console.log(shader.vertexShader)
@@ -93,8 +95,8 @@ function Box() {
 
     return (
         <mesh material={material}>
-            {/*<torusKnotGeometry args={[2, .4, 100, 16]}/>*/}
-            <boxGeometry args={[1, 1, 1]}/>
+            <torusKnotGeometry args={[2, .4, 100, 16]}/>
+            {/*<boxGeometry args={[1, 1, 1]}/>*/}
         </mesh>
     )
 }
