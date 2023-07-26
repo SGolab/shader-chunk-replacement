@@ -64,10 +64,14 @@ function Box() {
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <map_fragment>',
                 `
-            diffuseColor *= mix(texture2D(texture1, vUv), texture2D(texture2, vUv), dispFactor);
+                
+                if (vUv.y > dispFactor) {
+                    diffuseColor *= texture2D(texture1, vUv);
+                } else {
+                    diffuseColor *= texture2D(texture2, vUv);
+                }
+                           
        `)
-
-            console.log(shader.vertexShader)
         }
 
         return material
@@ -88,17 +92,18 @@ function Box() {
         } else {
             material.userData.dispFactor.value -= 0.01
         }
-
-
-        // material.userData.dispFactor.value = 0.5
     })
 
     return (
         <mesh material={material}>
-            <torusKnotGeometry args={[2, .4, 100, 16]}/>
-            {/*<boxGeometry args={[1, 1, 1]}/>*/}
+            {/*<torusKnotGeometry args={[2, .4, 100, 16]}/>*/}
+            <boxGeometry args={[1, 1, 1]}/>
         </mesh>
     )
+}
+
+function applyChangingTexture(material) {
+
 }
 
 export default App;
