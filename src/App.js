@@ -1,31 +1,61 @@
 import {Canvas, useFrame} from '@react-three/fiber'
-import {Environment, OrbitControls, useTexture} from '@react-three/drei'
+import {Environment, OrbitControls, useTexture, RoundedBox} from '@react-three/drei'
 import {useMemo, useRef, useState} from "react";
 import * as THREE from 'three'
 
 function App() {
     return (
-        <div style={{width: '100vw', height: '100vh'}}>
-            <Canvas>
+        <div>
+            <div style={{width: '100vw', height: '100vh'}}>
+                <Canvas shadows camera={{ fov: 75, position: [1.2, .3, 2]}}>
 
-                <color attach='background' args={['black']}/>
+                    <color attach='background' args={['black']}/>
 
-                <OrbitControls/>
+                    <OrbitControls/>
 
-                {/*<ambientLight/>*/}
-                {/*<pointLight position={[0, 2, 2]}/>*/}
+                    {/*<Environment preset="studio"/>*/}
 
-                <Environment preset="studio"/>
+                    <pointLight position={[0, 2, 2]} castShadow/>
+                    <pointLight position={[-2, -1, -2]} castShadow/>
+                    <pointLight position={[2, -1, 2]} castShadow/>
+                    <pointLight position={[2, -1, -2]} castShadow/>
+                    <pointLight position={[-2, -1, 2]} castShadow/>
 
-                <Box/>
-            </Canvas>
+                    <Box/>
+                </Canvas>
+            </div>
+
+            <div style={{
+                position: "absolute",
+                top: '20px',
+                left: '20px',
+                color: 'black',
+                backgroundColor: 'whitesmoke',
+                padding: '20px'
+            }}>
+                <div>Direct shader modification on three.js built-in materials (here MeshStandardMaterial).</div>
+                <div>
+                    <a href={'https://github.com/SGolab'}>Github</a>
+                </div>
+                <div>
+                    <a href={'https://www.linkedin.com/in/szymon-go%C5%82%C4%85b-35149219b/'}>LinkedIn</a>
+                </div>
+                <div>
+                    <a href={'https://nikifor.app/'}>Nikifor</a>
+                </div>
+
+            </div>
+
+            <div style={{position: "absolute", right: '20px', bottom: '20px', padding: '20px', backgroundColor: 'whitesmoke'}}>
+                <a href={'https://github.com/SGolab/shader-chunk-replacement'}>Code</a>
+            </div>
         </div>
     );
 }
 
 function Box() {
-    const texture1 = useTexture('./texture1.jpeg')
-    const texture2 = useTexture('./texture2.jpeg')
+    const texture1 = useTexture('./author.jpg')
+    const texture2 = useTexture('./company.png')
 
     const dispFactorGrowing = useRef(true)
 
@@ -34,7 +64,7 @@ function Box() {
         const material = new THREE.MeshStandardMaterial()
 
         material.metalness = 1
-        material.roughness = 0
+        material.roughness = .4
 
         applyChangingTexture(material, texture1, texture2)
 
@@ -59,10 +89,13 @@ function Box() {
     })
 
     return (
-        <mesh material={material}>
-            {/*<torusKnotGeometry args={[2, .4, 100, 16]}/>*/}
-            <boxGeometry args={[1, 1, 1]}/>
-        </mesh>
+        <>
+            <RoundedBox material={material} castShadow/>
+            <mesh position={[0, -.5, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[15, 15]} />
+                <meshStandardMaterial/>
+            </mesh>
+        </>
     )
 }
 
@@ -96,13 +129,13 @@ function applyChangingTexture(material, texture1, texture2) {
         shader.fragmentShader = shader.fragmentShader.replace(
             '#include <map_fragment>',
             `
-                
+
                 if (vUv.y > dispFactor) {
                     diffuseColor *= texture2D(texture1, vUv);
                 } else {
                     diffuseColor *= texture2D(texture2, vUv);
                 }
-                           
+
        `)
     }
 
